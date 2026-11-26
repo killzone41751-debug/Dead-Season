@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>DEAD SEASON — Created by Bradley Knox</title>
+<style>
+:root{--bg:#101614;--panel:#19231f;--line:#52645a;--lime:#b7e36a;--red:#e45d52;--gold:#e8bd65;--muted:#a9b6aa}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#080d0b;color:#eef4e9;font-family:system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden;touch-action:none}
+button,select{font:inherit}button{background:#26372d;color:#f5f7ed;border:1px solid #71836e;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}button:active{transform:scale(.97)}button.primary{background:var(--lime);color:#142015;border-color:#d5f49a}
+#app{height:100%;width:100%;position:relative;background:radial-gradient(ellipse at center,#24352b,#0b100e 75%);display:flex;align-items:center;justify-content:center}
+.screen{width:min(960px,96vw);max-height:96vh;overflow:auto;background:linear-gradient(145deg,#1b2821f5,#101713f5);border:1px solid #617463;border-radius:16px;padding:clamp(16px,3vw,30px);box-shadow:0 20px 80px #000b}
+h1{font-size:clamp(42px,9vw,82px);line-height:.9;letter-spacing:.06em;margin:8px 0;color:#d8e7bd;text-shadow:4px 4px #35483a}
+h2{margin:0 0 12px;color:#d9e8c8}p{color:var(--muted);line-height:1.45}.credit{letter-spacing:.22em;color:#c5d1bf;font-size:12px;margin:18px 0 26px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.col{display:flex;flex-direction:column;gap:10px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}.card{border:1px solid #52645a;background:#202d25;border-radius:10px;padding:12px}.card.selected{outline:2px solid var(--lime);background:#304333}.swatches{display:flex;gap:9px;flex-wrap:wrap}.swatch{width:34px;height:34px;border-radius:50%;border:2px solid #dce8d0;cursor:pointer}.swatch.selected{outline:3px solid var(--lime);outline-offset:3px}
+label{color:#cbd7c9;font-size:13px}select{padding:9px;background:#17221b;color:white;border:1px solid #71836e;border-radius:8px}
+#game{position:absolute;inset:0;display:none;background:#101812}canvas{width:100%;height:100%;display:block}
+#hud{position:absolute;inset:0;pointer-events:none}.hudbox{position:absolute;background:#101a14d9;border:1px solid #64745c;border-radius:8px;padding:7px 10px;font-size:12px;line-height:1.45;text-shadow:1px 1px #000}
+#stats{left:10px;top:10px}#wave{top:10px;left:50%;transform:translateX(-50%);text-align:center;min-width:125px}#minimap{right:10px;top:10px;width:112px;height:84px;padding:4px}#bossbar{left:50%;top:62px;transform:translateX(-50%);width:min(300px,55vw);display:none}#bossfill{height:7px;background:var(--red);width:100%;border-radius:6px}
+#hint{bottom:12px;left:50%;transform:translateX(-50%);white-space:nowrap}
+#controls{position:absolute;inset:0;pointer-events:none}.stick{position:absolute;bottom:24px;width:118px;height:118px;border-radius:50%;background:#dce9d01b;border:2px solid #c9d8bd77;pointer-events:auto;touch-action:none}.stick:after{content:"";position:absolute;width:42px;height:42px;border-radius:50%;background:#c8d9b977;left:36px;top:36px}.stick.active:after{background:#d8ed9c}.left{left:22px}.right{right:22px}
+.action{position:absolute;right:148px;bottom:34px;display:flex;gap:8px;pointer-events:auto}.action button{padding:12px 10px;min-width:58px;background:#26372de8}.action button small{display:block;font-size:9px;color:#d4dfc8}
+#pause{position:absolute;top:12px;right:136px;pointer-events:auto}
+@media(orientation:portrait){#hint{bottom:155px;font-size:10px}.stick{width:105px;height:105px;bottom:18px}.stick:after{left:30px;top:30px}.left{left:10px}.right{right:10px}.action{right:120px;bottom:28px;flex-direction:column}#pause{right:10px;top:105px}#minimap{top:102px}#bossbar{top:62px}}
+.hidden{display:none!important}.muted{color:var(--muted)}.bar{height:9px;background:#39483c;border-radius:8px;overflow:hidden}.bar span{display:block;height:100%;background:var(--lime)}
+</style>
+</head>
+<body><div id="app">
+<section id="title" class="screen">
+<div class="muted">A SURVIVAL ACTION GAME</div><h1>DEAD<br>SEASON</h1><div class="credit">CREATED BY BRADLEY KNOX</div>
+<p>The world fell quiet. The dead did not.</p>
+<div class="row"><button class="primary" id="newGame">NEW GAME</button><button id="continue">CONTINUE</button><button id="headquarters">HEADQUARTERS</button><button id="records">RECORDS</button></div>
+<p class="muted">Landscape recommended · Move with the left stick · Aim and fire with the right stick · Weapons are acquired in the field shop.</p>
+</section>
+<section id="creator" class="screen hidden">
+<h2>CREATE YOUR SURVIVOR</h2><p>Your appearance is yours to choose. This is cosmetic and does not restrict gameplay.</p>
+<div class="grid">
+<div class="card"><label>IDENTITY</label><div class="col" style="margin-top:8px"><button class="identity selected">Male</button><button class="identity">Female</button><button class="identity">Other</button></div></div>
+<div class="card"><label>SKIN TONE</label><div class="swatches" id="swatches" style="margin-top:12px"></div><p id="toneName">Medium brown</p></div>
+<div class="card"><label>CALLSIGN</label><input id="callsign" maxlength="18" value="Survivor" style="width:100%;padding:10px;background:#17221b;color:white;border:1px solid #71836e;border-radius:8px;margin-top:8px"></div>
+</div>
+<div class="row" style="margin-top:18px"><button class="primary" id="startRun">ENTER THE DEAD SEASON</button><button id="backTitle">BACK</button></div>
+</section>
+<section id="recordsScreen" class="screen hidden"><h2>PERSONAL RECORDS</h2><div id="recordText"></div><button id="recordsBack">BACK</button></section>
+<section id="baseScreen" class="screen hidden"><h2>SURVIVOR HEADQUARTERS</h2><p>Your headquarters is a safe zone. Expand facilities and build a community between runs. This prototype stores your local progress.</p><div class="grid"><div class="card"><b>Workshop</b><p>Weapon services and upgrades.</p></div><div class="card"><b>Medical Bay</b><p>Medical supplies and recovery.</p></div><div class="card"><b>Survivor Quarters</b><p>Recruit and manage your community.</p></div><div class="card"><b>Archive</b><p>Outbreak records and collectibles.</p></div></div><p id="baseStats"></p><button id="baseBack">BACK</button></section>
+<div id="game"><canvas id="c"></canvas><div id="hud">
+<div id="stats" class="hudbox"></div><div id="wave" class="hudbox"></div><div id="minimap" class="hudbox"><canvas id="mini" width="104" height="76"></canvas></div>
+<div id="bossbar" class="hudbox">BOSS <div class="bar"><span id="bossfill"></span></div></div><div id="hint" class="hudbox">L: MOVE · R: AIM/FIRE</div><button id="pause">Ⅱ</button></div>
+<div id="controls"><div class="stick left" id="move"></div><div class="stick right" id="aim"></div><div class="action"><button id="grenade">SPLASH<small>G</small></button><button id="medkit">MEDKIT<small>M</small></button><button id="ultimate">ULTIMATE<small>U</small></button><button id="shop">SHOP<small>$</small></button></div></div></div>
+</div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id), app=$('app'), canvas=$('c'),ctx=canvas.getContext('2d'),mini=$('mini').getContext('2d');
+let screen='title',player, zombies=[],bullets=[],particles=[],loot=[],keys={},last=0,spawnTimer=0,weatherTimer=0,weather='Clear',boss=null,paused=false,gameOver=false;
+let selectedTone='#99613f',identity='Male',name='Survivor',score=0,kills=0,wave=1,coins=0,armor=0,medkits=2,grenades=3,energy=0,combo=0,comboTime=0,weapon='Pistol',ammo=Infinity,owned=['Pistol'],mapIndex=0,runTime=0;
+let save=JSON.parse(localStorage.getItem('deadSeasonSave')||'{}');
+const tones=[['Porcelain','#f4d9c2'],['Light','#e9c3a0'],['Beige','#d8aa7f'],['Tan','#c58b5d'],['Golden brown','#b8794c'],['Light brown','#a96f49'],['Medium brown','#99613f'],['Warm brown','#7d4b32'],['Deep brown','#603923'],['Dark brown','#3d261e']];
+const show=id=>{['title','creator','recordsScreen','baseScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));$('game').style.display='none';screen=id};
+$('swatches').innerHTML=tones.map(([n,c])=>`<button class="swatch ${c===selectedTone?'selected':''}" title="${n}" style="background:${c}" data-tone="${c}" data-name="${n}"></button>`).join('');
+$('swatches').onclick=e=>{let b=e.target.closest('[data-tone]');if(!b)return;selectedTone=b.dataset.tone;$('toneName').textContent=b.dataset.name;document.querySelectorAll('.swatch').forEach(x=>x.classList.toggle('selected',x===b))};
+document.querySelectorAll('.identity').forEach(b=>b.onclick=()=>{identity=b.textContent;document.querySelectorAll('.identity').forEach(x=>x.classList.toggle('selected',x===b))});
+$('newGame').onclick=()=>show('creator');$('continue').onclick=()=>{if(save.player){selectedTone=save.tone||selectedTone;identity=save.identity||identity;startGame()}else show('creator')};
+$('backTitle').onclick=()=>show('title');$('startRun').onclick=()=>{name=$('callsign').value.trim()||'Survivor';startGame()};
+$('records').onclick=()=>{let r=save.records||{};$('recordText').innerHTML=`<p>Best wave: <b>${r.wave||0}</b></p><p>Best score: <b>${r.score||0}</b></p><p>Total kills: <b>${r.kills||0}</b></p><p>Games played: <b>${r.games||0}</b></p>`;show('recordsScreen')};$('recordsBack').onclick=()=>show('title');
+$('headquarters').onclick=()=>{$('baseStats').textContent=`Permanent currency: ${save.coins||0} · Survivors recruited: ${save.recruits||0} · Best wave: ${(save.records||{}).wave||0}`;show('baseScreen')};$('baseBack').onclick=()=>show('title');
+function resize(){canvas.width=innerWidth*devicePixelRatio;canvas.height=innerHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}addEventListener('resize',resize);resize();
+function startGame(){score=0;kills=0;wave=1;coins=0;armor=0;medkits=2;grenades=3;energy=0;combo=0;runTime=0;zombies=[];bullets=[];particles=[];loot=[];boss=null;paused=false;gameOver=false;player={x:canvas.width/devicePixelRatio/2,y:canvas.height/devicePixelRatio/2,hp:100,max:100,speed:205,angle:0};$('game').style.display='block';['title','creator','recordsScreen','baseScreen'].forEach(x=>$(x).classList.add('hidden'));screen='game';spawnTimer=0;last=performance.now();requestAnimationFrame(loop);save.player=true;save.tone=selectedTone;save.identity=identity;save.coins=save.coins||0;localStorage.setItem('deadSeasonSave',JSON.stringify(save))}
+function spawn(){let w=innerWidth,h=innerHeight,side=Math.floor(Math.random()*4),x=side===0?0:side===1?w:Math.random()*w,y=side===2?0:side===3?h:Math.random()*h;let hp=22+wave*5;zombies.push({x,y,hp,max:hp,r:13+Math.random()*4,speed:34+Math.random()*17+wave*1.5,boss:false})}
+function spawnBoss(){let a=Math.random()*Math.PI*2;boss={x:player.x+Math.cos(a)*Math.min(innerWidth,innerHeight)*.48,y:player.y+Math.sin(a)*Math.min(innerWidth,innerHeight)*.48,hp:500+wave*80,max:500+wave*80,r:29,speed:25+wave};zombies.push(boss);$('bossbar').style.display='block'}
+function shoot(){if(!player)return;let a=player.angle;bullets.push({x:player.x+Math.cos(a)*18,y:player.y+Math.sin(a)*18,vx:Math.cos(a)*600,vy:Math.sin(a)*600,life:.8,damage:weapon==='Rifle'?22:weapon==='Shotgun'?34:18});}
+function burst(x,y,color,n=10){for(let i=0;i<n;i++){let a=Math.random()*6.28,s=30+Math.random()*150;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.4+Math.random()*.5,color})}}
+function kill(z){zombies.splice(zombies.indexOf(z),1);if(z===boss){boss=null;$('bossbar').style.display='none';score+=1500;coins+=100;energy=100}else score+=100;kills++;combo++;comboTime=3;energy=Math.min(100,energy+7);coins+=5;if(Math.random()<.14)loot.push({x:z.x,y:z.y,type:Math.random()<.5?'armor':'coin'});burst(z.x,z.y,'#9dbb75',9)}
+function useGrenade(){if(grenades<=0)return;grenades--;let x=player.x+Math.cos(player.angle)*95,y=player.y+Math.sin(player.angle)*95;burst(x,y,'#f0a84d',34);zombies.slice().forEach(z=>{if(Math.hypot(z.x-x,z.y-y)<145){z.hp-=150;if(z.hp<=0)kill(z)}})}
+function useMed(){if(medkits>0&&player.hp<100){medkits--;player.hp=Math.min(100,player.hp+45)}}
+function ultimate(){if(energy<100)return;energy=0;burst(player.x,player.y,'#b9e86c',70);zombies.slice().forEach(z=>{if(Math.hypot(z.x-player.x,z.y-player.y)<220){z.hp-=250;if(z.hp<=0)kill(z)}})}
+$('grenade').onclick=useGrenade;$('medkit').onclick=useMed;$('ultimate').onclick=ultimate;
+$('shop').onclick=()=>{let choice=prompt('FIELD SHOP — Coins: '+coins+'\\n1: Rifle (80)\\n2: Shotgun (100)\\n3: Medical kit (30)\\n4: Armor plate (35)');if(choice==='1'&&coins>=80){coins-=80;weapon='Rifle';owned.push('Rifle')}if(choice==='2'&&coins>=100){coins-=100;weapon='Shotgun';owned.push('Shotgun')}if(choice==='3'&&coins>=30){coins-=30;medkits++}if(choice==='4'&&coins>=35){coins-=35;armor+=25}};
+$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'▶':'Ⅱ'};
+function gameEnd(){gameOver=true;let r=save.records||{};r.wave=Math.max(r.wave||0,wave);r.score=Math.max(r.score||0,score);r.kills=(r.kills||0)+kills;r.games=(r.games||0)+1;save.records=r;save.coins=(save.coins||0)+coins;localStorage.setItem('deadSeasonSave',JSON.stringify(save))}
+function loop(t){if(screen!=='game')return;let dt=Math.min(.035,(t-last)/1000);last=t;if(!paused&&!gameOver)update(dt);draw();requestAnimationFrame(loop)}
+function update(dt){runTime+=dt;let mx=moveVec.x,my=moveVec.y,ax=aimVec.x,ay=aimVec.y;if(keys.ArrowUp||keys.w)my-=1;if(keys.ArrowDown||keys.s)my+=1;if(keys.ArrowLeft||keys.a)mx-=1;if(keys.ArrowRight||keys.d)mx+=1;
+let ml=Math.hypot(mx,my);if(ml){player.x+=mx/ml*player.speed*dt;player.y+=my/ml*player.speed*dt}
+if(Math.hypot(ax,ay)>.15){player.angle=Math.atan2(ay,ax);shootCooldown-=dt;if(shootCooldown<=0){shoot();shootCooldown=weapon==='Shotgun'?.55:weapon==='Rifle'?.16:.32}}
+player.x=Math.max(25,Math.min(innerWidth-25,player.x));player.y=Math.max(25,Math.min(innerHeight-25,player.y));
+spawnTimer-=dt;if(spawnTimer<=0&&zombies.length<Math.min(45,8+wave*3)){spawn();spawnTimer=Math.max(.22,1.1-wave*.035)}
+if(wave%4===0&&!boss&&zombies.length>8)spawnBoss();
+weatherTimer-=dt;if(weatherTimer<=0){weather=['Clear','Rain','Fog','Storm'][Math.floor(Math.random()*4)];weatherTimer=24+Math.random()*24}
+bullets.forEach(b=>{b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;for(let z of zombies){if(Math.hypot(z.x-b.x,z.y-b.y)<z.r+4){z.hp-=b.damage;b.life=0;burst(b.x,b.y,'#f5d58b',2);if(z.hp<=0)kill(z);break}}});bullets=bullets.filter(b=>b.life>0);
+zombies.forEach(z=>{let a=Math.atan2(player.y-z.y,player.x-z.x);z.x+=Math.cos(a)*z.speed*dt;z.y+=Math.sin(a)*z.speed*dt;if(Math.hypot(player.x-z.x,player.y-z.y)<z.r+13){let dmg=(z.boss?22:9)*dt;if(armor>0){armor=Math.max(0,armor-dmg)}else player.hp-=dmg}});
+if(player.hp<=0){player.hp=0;gameEnd()}
+loot=loot.filter(l=>{if(Math.hypot(l.x-player.x,l.y-player.y)<25){if(l.type==='armor')armor+=20;else coins+=10;return false}return true});
+particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt});particles=particles.filter(p=>p.life>0);
+comboTime-=dt;if(comboTime<=0)combo=0;if(kills>=wave*12){wave++;kills=0;coins+=25;grenades=Math.min(10,grenades+1);if(wave%3===0)mapIndex++}
+$('stats').innerHTML=`${name} · ${identity}<br>HP ${Math.ceil(player.hp)} · Armor ${Math.ceil(armor)}<br>${weapon} · Score ${score}<br>Coins ${coins} · Kills ${kills}<br>Med ${medkits} · Grenades ${grenades} · Combo x${Math.max(1,combo)}`;
+$('wave').innerHTML=`WAVE ${wave}<br><span style="color:#b7e36a">${weather.toUpperCase()}</span>`;
+if(boss)$('bossfill').style.width=(boss.hp/boss.max*100)+'%';
+if(player.hp<=0){$('hint').textContent='YOU WERE OVERRUN — TAP TO RETURN';$('hint').style.pointerEvents='auto';$('hint').onclick=()=>{gameOver=false;show('title')}}else $('hint').textContent=`${weather} · ${Math.floor(runTime)}s survived · ${combo>3?'COMBO x'+combo:''}`;
+}
+let shootCooldown=0,moveVec={x:0,y:0},aimVec={x:0,y:0};
+function draw(){let w=innerWidth,h=innerHeight;ctx.clearRect(0,0,w,h);ctx.fillStyle=weather==='Fog'?'#25302a':weather==='Rain'||weather==='Storm'?'#17231f':'#1c2a21';ctx.fillRect(0,0,w,h);
+ctx.strokeStyle='#314537';ctx.lineWidth=1;for(let x=0;x<w;x+=48){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(let y=0;y<h;y+=48){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.angle);ctx.fillStyle=selectedTone;ctx.fillRect(-10,-10,20,20);ctx.fillStyle='#d8e5c8';ctx.fillRect(3,-4,19,8);ctx.restore();
+bullets.forEach(b=>{ctx.fillStyle='#f7d989';ctx.beginPath();ctx.arc(b.x,b.y,3,0,7);ctx.fill()});
+zombies.forEach(z=>{ctx.fillStyle=z===boss?'#9c4e43':'#78946a';ctx.beginPath();ctx.arc(z.x,z.y,z.r,0,7);ctx.fill();ctx.fillStyle='#1a211b';ctx.fillRect(z.x-7,z.y-3,4,3);ctx.fillRect(z.x+3,z.y-3,4,3);if(z===boss){ctx.fillStyle='#ddd';ctx.fillRect(z.x-22,z.y-z.r-10,44,4);ctx.fillStyle='#c34e46';ctx.fillRect(z.x-22,z.y-z.r-10,44*z.hp/z.max,4)}});
+loot.forEach(l=>{ctx.fillStyle=l.type==='armor'?'#8ec5e8':'#e8bd65';ctx.fillRect(l.x-5,l.y-5,10,10)});
+particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,3,3)});ctx.globalAlpha=1;
+if(weather==='Rain'||weather==='Storm'){ctx.strokeStyle='#9db6bd66';for(let i=0;i<75;i++){let x=(i*97+Date.now()*.25)%w,y=(i*53+Date.now()*.7)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-5,y+12);ctx.stroke()}}
+mini.clearRect(0,0,104,76);mini.fillStyle='#26382c';mini.fillRect(0,0,104,76);mini.fillStyle='#e3e8c8';mini.fillRect(player.x/w*104-2,player.y/h*76-2,4,4);mini.fillStyle='#d65e53';zombies.forEach(z=>mini.fillRect(z.x/w*104-1,z.y/h*76-1,3,3));
+if(gameOver){ctx.fillStyle='#0009';ctx.fillRect(0,0,w,h);ctx.fillStyle='white';ctx.textAlign='center';ctx.font='bold 32px system-ui';ctx.fillText('YOU WERE OVERRUN',w/2,h/2);ctx.font='16px system-ui';ctx.fillText('Tap the message below to return to the title screen',w/2,h/2+32)}}
+function bindStick(id,vec){let el=$(id),active=null;function set(e){let r=el.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2),m=Math.hypot(x,y),lim=42;vec.x=x/Math.max(lim,m);vec.y=y/Math.max(lim,m)}el.addEventListener('pointerdown',e=>{active=e.pointerId;el.setPointerCapture(active);el.classList.add('active');set(e)});el.addEventListener('pointermove',e=>{if(e.pointerId===active)set(e)});function end(e){if(e.pointerId===active){active=null;vec.x=vec.y=0;el.classList.remove('active')}}el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end)}
+bindStick('move',moveVec);bindStick('aim',aimVec);addEventListener('keydown',e=>{keys[e.key]=true;if(e.key==='g')useGrenade();if(e.key==='m')useMed();if(e.key==='u')ultimate()});addEventListener('keyup',e=>keys[e.key]=false);
+})();
+</script></body></html>
